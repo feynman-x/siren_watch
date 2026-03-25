@@ -11,9 +11,11 @@ import { SignalService } from './signal.service';
 import { TelegramService } from './telegram.service';
 import type { MarketSnapshot, SignalType } from './types/market-snapshot';
 
+const env = loadEnvConfig();
+
 @Injectable()
 export class MarketMonitorService implements OnModuleInit {
-  private readonly env = loadEnvConfig();
+  private readonly env = env;
   private readonly logger = new Logger(MarketMonitorService.name);
 
   private lastAlertAtBySignal = new Map<SignalType, number>();
@@ -31,7 +33,7 @@ export class MarketMonitorService implements OnModuleInit {
     await this.refreshSnapshotAndEvaluate();
   }
 
-  @Cron(process.env.PRICE_CRON ?? '*/15 * * * * *')
+  @Cron(env.priceCron)
   async refreshPriceCache(): Promise<void> {
     try {
       this.latestPrice = await this.binanceService.getLatestPrice(this.env.symbol);
@@ -45,7 +47,7 @@ export class MarketMonitorService implements OnModuleInit {
     }
   }
 
-  @Cron(process.env.SIGNAL_CRON ?? '5 * * * * *')
+  @Cron(env.signalCron)
   async refreshSnapshotAndEvaluate(): Promise<void> {
     try {
       const snapshot = await this.binanceService.getSnapshot(
